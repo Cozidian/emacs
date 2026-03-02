@@ -1,0 +1,1 @@
+/Users/christofferberglund/.config/emacs/elpaca/repos/consult/consult.el

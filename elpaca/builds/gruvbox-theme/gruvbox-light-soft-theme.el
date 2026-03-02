@@ -1,0 +1,1 @@
+/Users/christofferberglund/.config/emacs/elpaca/repos/emacs-theme-gruvbox/gruvbox-light-soft-theme.el

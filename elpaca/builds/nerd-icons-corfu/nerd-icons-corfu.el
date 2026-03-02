@@ -1,0 +1,1 @@
+/Users/christofferberglund/.config/emacs/elpaca/repos/nerd-icons-corfu/nerd-icons-corfu.el
