@@ -68,3 +68,9 @@ site-lisp/package/
 
 # If you only want to use init.org
 #/init.el
+
+# Elpaca (package manager state)
+/elpaca/
+
+# OS/editor noise
+.DS_Store

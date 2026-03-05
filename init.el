@@ -92,6 +92,7 @@
   (use-short-answers t)   ;; Since Emacs 29, `yes-or-no-p' will use `y-or-n-p'
 
   (dired-kill-when-opening-new-dired-buffer t) ;; Dired don't create new buffer
+  (add-hook 'dired-mode-hook #'dired-hide-details-mode)
   (recentf-mode t) ;; Enable recent file mode
   ;;(context-menu-mode t) ;; Right-click menu
 
@@ -360,6 +361,7 @@
     "t e" '(eat :wk "Eat terminal")
     "t v" '(vterm :wk "Vterm")
     "t V" '(multi-vterm :wk "Multi-vterm")
+    "t s" '(start/toggle-spelling :wk "Toggle spelling")
     "t t" '(visual-line-mode :wk "Toggle truncated lines (wrap)")
     "t l" '(display-line-numbers-mode :wk "Toggle line numbers"))
   )
@@ -457,6 +459,7 @@
   :ensure nil ;; Don't install eglot because it's now built-in
   :hook ((c-mode c-ts-mode c++-mode c++-ts-mode
                  lua-mode lua-ts-mode
+                 python-mode python-ts-mode
                  elixir-mode elixir-ts-mode heex-ts-mode)
          . eglot-ensure)
   :custom
@@ -465,6 +468,13 @@
   (eglot-autoshutdown t);; Shutdown unused servers.
   (eglot-report-progress nil) ;; Disable LSP server logs (Don't show lsp messages at the bottom, java)
   :config
+  ;; Use basedpyright for Python via uv.
+  ;; uv will cache the tool after the first run.
+  (setf (alist-get '(python-mode python-ts-mode)
+                   eglot-server-programs
+                   nil nil #'equal)
+        '("uv" "tool" "run" "--from" "basedpyright"
+          "basedpyright-langserver" "--stdio"))
   ;; Use Expert as Elixir LSP server. See: https://expert-lsp.org/docs/editors#emacs
   (setf (alist-get '(elixir-mode heex-ts-mode elixir-ts-mode)
                    eglot-server-programs
@@ -760,8 +770,66 @@
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
 
+(defun start/setup-ispell-fallback ()
+  "Configure flyspell with hunspell/aspell when jinx is unavailable."
+  (let ((spell-program (or (executable-find "hunspell")
+                           (executable-find "aspell"))))
+    (if spell-program
+        (progn
+          (setq ispell-program-name spell-program
+                ispell-dictionary "en_US")
+          (add-hook 'text-mode-hook #'flyspell-mode)
+          (add-hook 'prog-mode-hook #'flyspell-prog-mode)
+          (message "Spelling backend: %s + flyspell"
+                   (file-name-nondirectory spell-program)))
+      (message "No spelling backend found. Install enchant (for jinx) or hunspell/aspell."))))
+
+(defun start/enable-spelling ()
+  "Enable jinx globally, fallback to flyspell if jinx fails."
+  (condition-case err
+      (if (require 'jinx nil t)
+          (progn
+            (setq jinx-languages "en_US nb_NO")
+            (global-jinx-mode 1)
+            (message "Spelling backend: jinx"))
+        (start/setup-ispell-fallback))
+    (error
+     (message "Jinx unavailable (%s), using flyspell fallback."
+              (error-message-string err))
+     (start/setup-ispell-fallback))))
+
+(defun start/toggle-spelling ()
+  "Toggle spelling in the current buffer."
+  (interactive)
+  (cond
+   ((bound-and-true-p jinx-mode)
+    (jinx-mode -1)
+    (message "Jinx disabled in buffer"))
+   ((fboundp 'jinx-mode)
+    (jinx-mode 1)
+    (message "Jinx enabled in buffer"))
+   ((bound-and-true-p flyspell-mode)
+    (flyspell-mode -1)
+    (message "Flyspell disabled in buffer"))
+   (t
+    (flyspell-mode 1)
+    (message "Flyspell enabled in buffer"))))
+
+(defun start/correct-word-at-point ()
+  "Correct spelling at point using jinx or ispell."
+  (interactive)
+  (cond
+   ((fboundp 'jinx-correct) (call-interactively #'jinx-correct))
+   ((fboundp 'ispell-word) (call-interactively #'ispell-word))
+   (t (user-error "No spelling command available"))))
+
 (use-package jinx
-  :hook (elpaca-after-init . global-jinx-mode))
+  :defer t
+  :commands (jinx-mode jinx-correct global-jinx-mode))
+
+(use-package emacs
+  :ensure nil
+  :hook (elpaca-after-init . start/enable-spelling))
 
 (use-package gptel
   :commands (gptel))
@@ -897,3 +965,6 @@
 
 (use-package ws-butler
   :hook (elpaca-after-init . ws-butler-global-mode))
+
+(use-package ag
+  :commands (ag ag-project))
