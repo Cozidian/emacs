@@ -921,7 +921,8 @@ If you want to use LSP mode check out their [[https://emacs-lsp.github.io/lsp-mo
       :hook ((c-mode c-ts-mode c++-mode c++-ts-mode
                      lua-mode lua-ts-mode
                      python-mode python-ts-mode
-                     elixir-mode elixir-ts-mode heex-ts-mode)
+                     elixir-mode elixir-ts-mode heex-ts-mode
+                     typescript-ts-mode tsx-ts-mode)
              . eglot-ensure)
       :custom
       ;; Good default
