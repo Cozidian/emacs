@@ -586,7 +586,7 @@ Note: The Leader key is what you will press when you want to access your keybind
         "." '(find-file :wk "Find file")
         "," '(embark-act :wk "Embark act")
         "TAB" '(comment-line :wk "Comment lines")
-        "q" '(flymake-show-buffer-diagnostics :wk "Flymake buffer diagnostic")
+        "q" '(:ignore t :wk "Quit")
 
         ;; Projectile
         "p" '(projectile-command-map :wk "Projectile")
@@ -698,6 +698,9 @@ Note: The Leader key is what you will press when you want to access your keybind
         "r q" '(save-buffers-kill-emacs :wk "Quit Emacs and Daemon")
         "r r" '(start/reload-config :wk "Reload Emacs config"))
 
+  (start/leader-keys
+    "q q" '(save-buffers-kill-emacs :wk "Quit Emacs"))
+
       (start/leader-keys
         "t" '(:ignore t :wk "Toggle")
         "t e" '(eat :wk "Eat terminal")
@@ -770,7 +773,7 @@ Evil users don't need to add keybindings for undo-fu just change evil-undo-syste
 ** Fonts
 Set your base font and default font size here.
 #+begin_src emacs-lisp
-    (defvar start/font-family "JetBrains Mono")
+    (defvar start/font-family "Cascadia Mono")
     (defvar start/font-size 160) ;; 120 = 12pt
     (defvar start/font-weight 'medium)
     (defvar start/font-line-spacing 0.12)

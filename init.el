@@ -173,210 +173,213 @@
   (evil-collection-init))
 
 (defun start/open-init-file ()
-  "Open init.org configuration file"
-  (interactive)
-  (find-file "~/.config/emacs/init.org"))
+    "Open init.org configuration file"
+    (interactive)
+    (find-file "~/.config/emacs/init.org"))
 
-(defun start/reload-config()
-  "Reload Emacs config"
-  (interactive)
-  (load-file "~/.config/emacs/init.el"))
+  (defun start/reload-config()
+    "Reload Emacs config"
+    (interactive)
+    (load-file "~/.config/emacs/init.el"))
 
-(defun start/copy-file-path ()
-  "Copy the current buffer file path to the kill ring."
-  (interactive)
-  (if-let ((path (buffer-file-name)))
-      (progn
-        (kill-new (file-truename path))
-        (message "Copied path: %s" (file-truename path)))
-    (message "Current buffer is not visiting a file.")))
+  (defun start/copy-file-path ()
+    "Copy the current buffer file path to the kill ring."
+    (interactive)
+    (if-let ((path (buffer-file-name)))
+        (progn
+          (kill-new (file-truename path))
+          (message "Copied path: %s" (file-truename path)))
+      (message "Current buffer is not visiting a file.")))
 
-(defun start/split-window-below-and-focus ()
-  "Split the current window below and move focus to it."
-  (interactive)
-  (split-window-below)
-  (windmove-down))
+  (defun start/split-window-below-and-focus ()
+    "Split the current window below and move focus to it."
+    (interactive)
+    (split-window-below)
+    (windmove-down))
 
-(defun start/split-window-right-and-focus ()
-  "Split the current window right and move focus to it."
-  (interactive)
-  (split-window-right)
-  (windmove-right))
+  (defun start/split-window-right-and-focus ()
+    "Split the current window right and move focus to it."
+    (interactive)
+    (split-window-right)
+    (windmove-right))
 
-(defvar start/font-scale-repeat-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "+") #'start/font-scale-increase)
-    (define-key map (kbd "-") #'start/font-scale-decrease)
-    (define-key map (kbd "=") #'start/font-scale-reset)
-    map)
-  "Transient keymap used to repeat font scaling commands.")
+  (defvar start/font-scale-repeat-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map (kbd "+") #'start/font-scale-increase)
+      (define-key map (kbd "-") #'start/font-scale-decrease)
+      (define-key map (kbd "=") #'start/font-scale-reset)
+      map)
+    "Transient keymap used to repeat font scaling commands.")
 
-(defun start/font-scale-increase ()
-  "Increase font size and keep font scaling keys active."
-  (interactive)
-  (text-scale-increase 1)
-  (set-transient-map start/font-scale-repeat-map t))
+  (defun start/font-scale-increase ()
+    "Increase font size and keep font scaling keys active."
+    (interactive)
+    (text-scale-increase 1)
+    (set-transient-map start/font-scale-repeat-map t))
 
-(defun start/font-scale-decrease ()
-  "Decrease font size and keep font scaling keys active."
-  (interactive)
-  (text-scale-decrease 1)
-  (set-transient-map start/font-scale-repeat-map t))
+  (defun start/font-scale-decrease ()
+    "Decrease font size and keep font scaling keys active."
+    (interactive)
+    (text-scale-decrease 1)
+    (set-transient-map start/font-scale-repeat-map t))
 
-(defun start/font-scale-reset ()
-  "Reset font size and keep font scaling keys active."
-  (interactive)
-  (text-scale-set 0)
-  (set-transient-map start/font-scale-repeat-map t))
+  (defun start/font-scale-reset ()
+    "Reset font size and keep font scaling keys active."
+    (interactive)
+    (text-scale-set 0)
+    (set-transient-map start/font-scale-repeat-map t))
 
-(use-package general
-  :after (evil) ;; <- evil
-  :config
-  (general-evil-setup) ;; <- evil
-  ;; Set up 'SPC' as the Evil leader key
-  (general-create-definer start/leader-keys
-    :states '(normal visual motion) ;; <- evil
-    :keymaps 'override
-    :prefix "SPC"
-    :global-prefix "C-SPC") ;; Global fallback from non-evil states
+  (use-package general
+    :after (evil) ;; <- evil
+    :config
+    (general-evil-setup) ;; <- evil
+    ;; Set up 'SPC' as the Evil leader key
+    (general-create-definer start/leader-keys
+      :states '(normal visual motion) ;; <- evil
+      :keymaps 'override
+      :prefix "SPC"
+      :global-prefix "C-SPC") ;; Global fallback from non-evil states
 
-  (start/leader-keys
-    "." '(find-file :wk "Find file")
-    "," '(embark-act :wk "Embark act")
-    "TAB" '(comment-line :wk "Comment lines")
-    "q" '(flymake-show-buffer-diagnostics :wk "Flymake buffer diagnostic")
+    (start/leader-keys
+      "." '(find-file :wk "Find file")
+      "," '(embark-act :wk "Embark act")
+      "TAB" '(comment-line :wk "Comment lines")
+      "q" '(:ignore t :wk "Quit")
 
-    ;; Projectile
-    "p" '(projectile-command-map :wk "Projectile")
-    "s p" '(projectile-discover-projects-in-search-path :wk "Search for projects"))
+      ;; Projectile
+      "p" '(projectile-command-map :wk "Projectile")
+      "s p" '(projectile-discover-projects-in-search-path :wk "Search for projects"))
 
-  (start/leader-keys
-    "f" '(:ignore t :wk "Files")
-    "f f" '(find-file :wk "Find file")
-    "f s" '(save-buffer :wk "Save file")
-    "f S" '(write-file :wk "Save file as")
-    "f r" '(consult-recent-file :wk "Recent files")
-    "f c" '(start/open-init-file :wk "Open config")
-    "f d" '(dired-jump :wk "Dired at file")
-    "f y" '(start/copy-file-path :wk "Copy file path"))
+    (start/leader-keys
+      "f" '(:ignore t :wk "Files")
+      "f f" '(find-file :wk "Find file")
+      "f s" '(save-buffer :wk "Save file")
+      "f S" '(write-file :wk "Save file as")
+      "f r" '(consult-recent-file :wk "Recent files")
+      "f c" '(start/open-init-file :wk "Open config")
+      "f d" '(dired-jump :wk "Dired at file")
+      "f y" '(start/copy-file-path :wk "Copy file path"))
 
-  (start/leader-keys
-    "m" '(:ignore t :wk "Bookmarks & Registers")
-    ;; Registers
-    "m s" '(consult-register :wk "Consult register")
-    "m k" '(jump-to-register :wk "Jump to register")
-    "m e" '(point-to-register :wk "Point to register")
-    ;; Bookmarks
-    "m a" '(bookmark-set :wk "Bookmark Set")
-    "m d" '(bookmark-jump :wk "Bookmark Jump")
-    "m r" '(bookmark-delete :wk "Bookmark Delete")
-    "m R" '(bookmark-delete-all :wk "Bookmark Delete All")
-    "m l" '(bookmark-bmenu-list :wk "Bookmark bmenu list")
-    "m c" '(consult-bookmark :wk "Consult Bookmark"))
+    (start/leader-keys
+      "m" '(:ignore t :wk "Bookmarks & Registers")
+      ;; Registers
+      "m s" '(consult-register :wk "Consult register")
+      "m k" '(jump-to-register :wk "Jump to register")
+      "m e" '(point-to-register :wk "Point to register")
+      ;; Bookmarks
+      "m a" '(bookmark-set :wk "Bookmark Set")
+      "m d" '(bookmark-jump :wk "Bookmark Jump")
+      "m r" '(bookmark-delete :wk "Bookmark Delete")
+      "m R" '(bookmark-delete-all :wk "Bookmark Delete All")
+      "m l" '(bookmark-bmenu-list :wk "Bookmark bmenu list")
+      "m c" '(consult-bookmark :wk "Consult Bookmark"))
 
-  (start/leader-keys
-    "s" '(:ignore t :wk "Search")
-    "s c" '(start/open-init-file :wk "Open init file")
-    "s r" '(consult-recent-file :wk "Search recent files")
-    "s f" '(consult-fd :wk "Search files with fd")
-    "s g" '(consult-ripgrep :wk "Search with ripgrep")
-    "s l" '(consult-line :wk "Search line")
-    "s i" '(consult-imenu :wk "Search Imenu buffer locations")) ;; This one is really cool
+    (start/leader-keys
+      "s" '(:ignore t :wk "Search")
+      "s c" '(start/open-init-file :wk "Open init file")
+      "s r" '(consult-recent-file :wk "Search recent files")
+      "s f" '(consult-fd :wk "Search files with fd")
+      "s g" '(consult-ripgrep :wk "Search with ripgrep")
+      "s l" '(consult-line :wk "Search line")
+      "s i" '(consult-imenu :wk "Search Imenu buffer locations")) ;; This one is really cool
 
-  (start/leader-keys
-    "b" '(:ignore t :wk "Buffers & Dired")
-    "b s" '(consult-buffer :wk "Switch buffer")
-    "b k" '(kill-current-buffer :wk "Kill current buffer")
-    "b i" '(ibuffer :wk "Ibuffer")
-    "b n" '(next-buffer :wk "Next buffer")
-    "b p" '(previous-buffer :wk "Previous buffer")
-    "b r" '(revert-buffer :wk "Reload buffer")
-    "b v" '(dired :wk "Open dired")
-    "b j" '(dired-jump :wk "Dired jump to current"))
+    (start/leader-keys
+      "b" '(:ignore t :wk "Buffers & Dired")
+      "b s" '(consult-buffer :wk "Switch buffer")
+      "b k" '(kill-current-buffer :wk "Kill current buffer")
+      "b i" '(ibuffer :wk "Ibuffer")
+      "b n" '(next-buffer :wk "Next buffer")
+      "b p" '(previous-buffer :wk "Previous buffer")
+      "b r" '(revert-buffer :wk "Reload buffer")
+      "b v" '(dired :wk "Open dired")
+      "b j" '(dired-jump :wk "Dired jump to current"))
 
-  (start/leader-keys
-    "w" '(:ignore t :wk "Windows")
-    "w w" '(other-window :wk "Other window")
-    "w s" '(split-window-below :wk "Split below")
-    "w v" '(split-window-right :wk "Split right")
-    "w S" '(start/split-window-below-and-focus :wk "Split below + focus")
-    "w V" '(start/split-window-right-and-focus :wk "Split right + focus")
-    "w d" '(delete-window :wk "Delete window")
-    "w o" '(delete-other-windows :wk "Delete others")
-    "w +" '(start/font-scale-increase :wk "Increase font")
-    "w -" '(start/font-scale-decrease :wk "Decrease font")
-    "w =" '(start/font-scale-reset :wk "Reset font")
-    "w h" '(windmove-left :wk "Move left")
-    "w j" '(windmove-down :wk "Move down")
-    "w k" '(windmove-up :wk "Move up")
-    "w l" '(windmove-right :wk "Move right")
-    "w H" '(windmove-swap-states-left :wk "Window left")
-    "w J" '(windmove-swap-states-down :wk "Window down")
-    "w K" '(windmove-swap-states-up :wk "Window up")
-    "w L" '(windmove-swap-states-right :wk "Window right"))
+    (start/leader-keys
+      "w" '(:ignore t :wk "Windows")
+      "w w" '(other-window :wk "Other window")
+      "w s" '(split-window-below :wk "Split below")
+      "w v" '(split-window-right :wk "Split right")
+      "w S" '(start/split-window-below-and-focus :wk "Split below + focus")
+      "w V" '(start/split-window-right-and-focus :wk "Split right + focus")
+      "w d" '(delete-window :wk "Delete window")
+      "w o" '(delete-other-windows :wk "Delete others")
+      "w +" '(start/font-scale-increase :wk "Increase font")
+      "w -" '(start/font-scale-decrease :wk "Decrease font")
+      "w =" '(start/font-scale-reset :wk "Reset font")
+      "w h" '(windmove-left :wk "Move left")
+      "w j" '(windmove-down :wk "Move down")
+      "w k" '(windmove-up :wk "Move up")
+      "w l" '(windmove-right :wk "Move right")
+      "w H" '(windmove-swap-states-left :wk "Window left")
+      "w J" '(windmove-swap-states-down :wk "Window down")
+      "w K" '(windmove-swap-states-up :wk "Window up")
+      "w L" '(windmove-swap-states-right :wk "Window right"))
 
-  (start/leader-keys
-    "c" '(:ignore t :wk "Code")
-    "c e" '(eglot-reconnect :wk "Eglot Reconnect")
-    "c d" '(eldoc-doc-buffer :wk "Eldoc Buffer")
-    "c h" '(eldoc-box-help-at-point :wk "Eldoc Box")
-    "c f" '(eglot-format :wk "Eglot Format")
-    "c g" '(gptel :wk "GPTel")
+    (start/leader-keys
+      "c" '(:ignore t :wk "Code")
+      "c e" '(eglot-reconnect :wk "Eglot Reconnect")
+      "c d" '(eldoc-doc-buffer :wk "Eldoc Buffer")
+      "c h" '(eldoc-box-help-at-point :wk "Eldoc Box")
+      "c f" '(eglot-format :wk "Eglot Format")
+      "c g" '(gptel :wk "GPTel")
 
-    "c l" '(consult-flymake :wk "Consult Flymake")
-    "c n" '(flymake-goto-next-error :wk "Flymake next error")
-    "c p" '(flymake-goto-prev-error :wk "Flymake previous error")
+      "c l" '(consult-flymake :wk "Consult Flymake")
+      "c n" '(flymake-goto-next-error :wk "Flymake next error")
+      "c p" '(flymake-goto-prev-error :wk "Flymake previous error")
 
-    "c a" '(eglot-code-actions :wk "Eglot code actions")
-    "c r" '(eglot-rename :wk "Eglot Rename")
-    "c i" '(xref-find-definitions :wk "Find definition")
-    "c s" '(xref-find-references :wk "Find references"))
+      "c a" '(eglot-code-actions :wk "Eglot code actions")
+      "c r" '(eglot-rename :wk "Eglot Rename")
+      "c i" '(xref-find-definitions :wk "Find definition")
+      "c s" '(xref-find-references :wk "Find references"))
 
-  (start/leader-keys
-    "e" '(:ignore t :wk "Elisp")
-    "e b" '(eval-buffer :wk "Evaluate elisp in buffer")
-    "e r" '(eval-region :wk "Evaluate elisp in region"))
+    (start/leader-keys
+      "e" '(:ignore t :wk "Elisp")
+      "e b" '(eval-buffer :wk "Evaluate elisp in buffer")
+      "e r" '(eval-region :wk "Evaluate elisp in region"))
 
-  (start/leader-keys
-    "g" '(:ignore t :wk "Git")
-    "g s" '(magit-status :wk "Magit status"))
+    (start/leader-keys
+      "g" '(:ignore t :wk "Git")
+      "g s" '(magit-status :wk "Magit status"))
 
-  (start/leader-keys
-    "r" '(:ignore t :wk "Reload & Packages") ;; To get more help use C-h commands (describe variable, function, etc.)
-    ;; Mason.el
-    "r m" '(mason-manager :wk "Mason manager")
-    "r i" '(mason-install :wk "Mason install")
-    ;; Elpaca
-    "r p" '(elpaca-manager :wk "Elpaca manager")
-    "r f" '(elpaca-fetch-all :wk "Elpaca fetch updates")
-    "r g" '(elpaca-merge-all :wk "Elpaca merge updates")
-    "r u" '(elpaca-update-all :wk "Elpaca update all")
-    "r l" '(elpaca-log :wk "Elpaca log")
+    (start/leader-keys
+      "r" '(:ignore t :wk "Reload & Packages") ;; To get more help use C-h commands (describe variable, function, etc.)
+      ;; Mason.el
+      "r m" '(mason-manager :wk "Mason manager")
+      "r i" '(mason-install :wk "Mason install")
+      ;; Elpaca
+      "r p" '(elpaca-manager :wk "Elpaca manager")
+      "r f" '(elpaca-fetch-all :wk "Elpaca fetch updates")
+      "r g" '(elpaca-merge-all :wk "Elpaca merge updates")
+      "r u" '(elpaca-update-all :wk "Elpaca update all")
+      "r l" '(elpaca-log :wk "Elpaca log")
 
-    "r q" '(save-buffers-kill-emacs :wk "Quit Emacs and Daemon")
-    "r r" '(start/reload-config :wk "Reload Emacs config"))
+      "r q" '(save-buffers-kill-emacs :wk "Quit Emacs and Daemon")
+      "r r" '(start/reload-config :wk "Reload Emacs config"))
 
-  (start/leader-keys
-    "t" '(:ignore t :wk "Toggle")
-    "t e" '(eat :wk "Eat terminal")
-    "t v" '(vterm :wk "Vterm")
-    "t V" '(multi-vterm :wk "Multi-vterm")
-    "t s" '(start/toggle-spelling :wk "Toggle spelling")
-    "t t" '(visual-line-mode :wk "Toggle truncated lines (wrap)")
-    "t l" '(display-line-numbers-mode :wk "Toggle line numbers"))
-  )
+(start/leader-keys
+  "q q" '(save-buffers-kill-emacs :wk "Quit Emacs"))
 
-;; Fix general.el leader key not working instantly in messages buffer with evil mode
-(use-package emacs
-  :ensure nil
-  :after (evil general)
-  :hook (elpaca-after-init
-         . (lambda ()
-             (when-let ((messages-buffer (get-buffer "*Messages*")))
-               (with-current-buffer messages-buffer
-                 (evil-normalize-keymaps))))))
+    (start/leader-keys
+      "t" '(:ignore t :wk "Toggle")
+      "t e" '(eat :wk "Eat terminal")
+      "t v" '(vterm :wk "Vterm")
+      "t V" '(multi-vterm :wk "Multi-vterm")
+      "t s" '(start/toggle-spelling :wk "Toggle spelling")
+      "t t" '(visual-line-mode :wk "Toggle truncated lines (wrap)")
+      "t l" '(display-line-numbers-mode :wk "Toggle line numbers"))
+    )
 
-(defvar start/font-family "JetBrains Mono")
+  ;; Fix general.el leader key not working instantly in messages buffer with evil mode
+  (use-package emacs
+    :ensure nil
+    :after (evil general)
+    :hook (elpaca-after-init
+           . (lambda ()
+               (when-let ((messages-buffer (get-buffer "*Messages*")))
+                 (with-current-buffer messages-buffer
+                   (evil-normalize-keymaps))))))
+
+(defvar start/font-family "Cascadia Mono")
 (defvar start/font-size 160) ;; 120 = 12pt
 (defvar start/font-weight 'medium)
 (defvar start/font-line-spacing 0.12)
