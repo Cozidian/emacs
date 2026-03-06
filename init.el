@@ -369,7 +369,8 @@
       "t V" '(multi-vterm :wk "Multi-vterm")
       "t s" '(start/toggle-spelling :wk "Toggle spelling")
       "t t" '(visual-line-mode :wk "Toggle truncated lines (wrap)")
-      "t l" '(display-line-numbers-mode :wk "Toggle line numbers"))
+      "t l" '(display-line-numbers-mode :wk "Toggle line numbers")
+      "t p" '(org-tree-slide-mode :wk "Presentation mode"))
     )
 
   ;; Fix general.el leader key not working instantly in messages buffer with evil mode
@@ -494,6 +495,9 @@
   (nyan-bar-length 10)
   :config
   (nyan-mode +1))
+
+(use-package olivetti
+  :defer t)
 
 (use-package projectile
   :hook (elpaca-after-init . projectile-mode)
@@ -650,6 +654,118 @@
   (setq org-modern-replace-stars '("⟶" "⟶" "⟶" "⟶" "⟶" "⟶" "⟶" "⟶"))
   :hook ((org-mode . org-modern-mode)
          (org-agenda-finalize . org-modern-agenda)))
+
+(defvar start/notes-frame nil
+  "Separate frame used for speaker notes during a presentation.")
+
+(defun start/get-slide-notes ()
+  "Extract content from the :NOTES: drawer of the current org heading."
+  (save-excursion
+    (org-back-to-heading t)
+    (let ((end (save-excursion (org-end-of-subtree t) (point))))
+      (when (re-search-forward "^[ \t]*:NOTES:" end t)
+        (let ((start (line-beginning-position 2))
+              (stop  (progn (re-search-forward "^[ \t]*:END:" end t)
+                            (line-beginning-position))))
+          (buffer-substring-no-properties start stop))))))
+
+(defun start/update-notes-frame ()
+  "Refresh the speaker notes frame for the current slide."
+  (when (and (frame-live-p start/notes-frame)
+             (bound-and-true-p org-tree-slide-mode))
+    (let ((title (org-get-heading t t t t))
+          (notes (start/get-slide-notes)))
+      (with-current-buffer (get-buffer-create "*Speaker Notes*")
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (unless (eq major-mode 'org-mode) (org-mode))
+          (insert "#+TITLE: " title "\n\n")
+          (insert (if (string-empty-p notes) "/No notes for this slide./" notes))
+          (goto-char (point-min)))))))
+
+(defvar start/notes-overlays nil
+  "Overlays that hide :NOTES: drawers during presentation.")
+
+(defun start/hide-notes-drawers ()
+  "Cover every :NOTES: drawer with an invisible overlay."
+  (setq start/notes-overlays nil)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward "^[ \t]*:NOTES:" nil t)
+      (let* ((beg (line-beginning-position))
+             (end (when (re-search-forward "^[ \t]*:END:" nil t)
+                    (line-end-position)))
+             (ov  (when end (make-overlay beg (1+ end)))))
+        (when ov
+          (overlay-put ov 'invisible t)
+          (push ov start/notes-overlays))))))
+
+(defun start/remove-notes-overlays ()
+  "Remove all :NOTES: invisibility overlays."
+  (mapc #'delete-overlay start/notes-overlays)
+  (setq start/notes-overlays nil))
+
+(defun start/open-notes-frame ()
+  "Open a dedicated frame for speaker notes on the secondary monitor."
+  (unless (frame-live-p start/notes-frame)
+    (let* ((monitors  (display-monitor-attributes-list))
+           (secondary (when (> (length monitors) 1) (nth 1 monitors)))
+           (geo       (when secondary (alist-get 'geometry secondary)))
+           (position  (when geo `((left . ,(nth 0 geo)) (top . ,(nth 1 geo))))))
+      (setq start/notes-frame
+            (make-frame `((name . "Speaker Notes")
+                          (width . 80) (height . 30)
+                          (minibuffer . t)
+                          ,@position)))))
+  (with-selected-frame start/notes-frame
+    (switch-to-buffer (get-buffer-create "*Speaker Notes*"))
+    (text-scale-set 2))
+  (start/update-notes-frame)
+  (add-hook 'org-tree-slide-before-narrow-hook #'start/update-notes-frame nil t))
+
+(defun start/close-notes-frame ()
+  "Close the speaker notes frame."
+  (remove-hook 'org-tree-slide-before-narrow-hook #'start/update-notes-frame t)
+  (when (frame-live-p start/notes-frame)
+    (delete-frame start/notes-frame)
+    (setq start/notes-frame nil)))
+
+(defun start/presentation-setup ()
+  (text-scale-increase 4)
+  (olivetti-mode 1)
+  (display-line-numbers-mode 0)
+  (setq-local global-hl-line-mode nil)
+  (hl-line-mode 0)
+  (whitespace-mode 0)
+  (diff-hl-mode 0)
+  (setq-local mode-line-format nil)
+  (start/hide-notes-drawers)
+  (start/open-notes-frame))
+
+(defun start/presentation-end ()
+  (text-scale-increase 0)
+  (olivetti-mode 0)
+  (display-line-numbers-mode 1)
+  (hl-line-mode 1)
+  (diff-hl-mode 1)
+  (kill-local-variable 'mode-line-format)
+  (start/remove-notes-overlays)
+  (start/close-notes-frame))
+
+(use-package org-tree-slide
+  :commands org-tree-slide-mode
+  :hook ((org-tree-slide-play . start/presentation-setup)
+         (org-tree-slide-stop . start/presentation-end))
+  :config
+  (org-tree-slide-simple-profile)
+  (defvar start/presentation-nav-map (make-sparse-keymap))
+  (define-key start/presentation-nav-map (kbd "<right>") #'org-tree-slide-move-next-tree)
+  (define-key start/presentation-nav-map (kbd "<left>")  #'org-tree-slide-move-previous-tree)
+  (add-to-list 'emulation-mode-map-alists
+               `((org-tree-slide-mode . ,start/presentation-nav-map)))
+  :custom
+  (org-tree-slide-skip-outline-level 2)
+  (org-tree-slide-header nil))
 
 (use-package eat
   :defer
