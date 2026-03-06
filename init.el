@@ -104,12 +104,13 @@
   (native-comp-async-report-warnings-errors 'silent) ;; Don't show native comp errors
   (warning-minimum-level :error) ;; Only show errors in warnings buffer
 
-  (mouse-wheel-progressive-speed nil) ;; Disable progressive speed when scrolling
-  (scroll-conservatively 10) ;; Smooth scrolling
-  (scroll-margin 8)
+  (cursor-in-non-selected-windows nil) ;; Hide cursor in inactive windows
+  (use-dialog-box nil)                 ;; No native OS dialogs
+  (frame-title-format "%b")            ;; Just buffer name in title bar
 
-  (pixel-scroll-precision-mode t) ;; Precise pixel scrolling. i.e. smooth scrolling (GUI only)
-  (pixel-scroll-precision-use-momentum nil)
+  (mouse-wheel-progressive-speed nil) ;; Disable progressive speed when scrolling
+  (scroll-conservatively 3)           ;; For ultra-scroll
+  (scroll-margin 0)                   ;; For ultra-scroll
 
   (indent-tabs-mode nil) ;; Only use spaces for indentation
   (tab-width 4)
@@ -137,6 +138,8 @@
   ;; Move customization variables to a separate file and load it, avoid filling up init.el with unnecessary variables
   (setq custom-file (locate-user-emacs-file "custom-vars.el"))
   (load custom-file 'noerror 'nomessage)
+  (winner-mode 1)                        ;; Enable window layout undo/redo
+  (global-unset-key (kbd "C-z"))         ;; Prevent accidental suspend
   :bind (
          ([escape] . keyboard-escape-quit) ;; Makes Escape quit prompts (Minibuffer Escape)
          ;; Zooming In/Out
@@ -414,12 +417,21 @@
              (target-h (floor (* wh start/frame-size-ratio)))
              (left (+ wx (/ (- ww target-w) 2)))
              (top (+ wy (/ (- wh target-h) 2))))
+        (set-frame-parameter frame 'internal-border-width 0) ;; Remove thin border (visible on macOS Monterey+)
         (set-frame-size frame target-w target-h t)
         (set-frame-position frame left top)))))
 
 ;; Apply on startup and for new frames (emacsclient/daemon).
 (add-hook 'window-setup-hook #'start/apply-frame-size)
 (add-hook 'after-make-frame-functions #'start/apply-frame-size)
+
+;; Pixel-perfect frame resizing.
+(setq frame-resize-pixelwise t)
+
+;; Remove continuation fringe indicator for a cleaner look.
+(setq-default fringe-indicator-alist
+              (delq (assq 'continuation fringe-indicator-alist)
+                    fringe-indicator-alist))
 
 (use-package gruvbox-theme
   :config
@@ -435,10 +447,29 @@
 
 (add-hook 'window-setup-hook 'start/tui-enable-transparency)
 
-(use-package doom-modeline
+(use-package moody
+  :config
+  (setq x-underline-at-descent-line t)
+  (setq-default mode-line-format
+                '(" "
+                  mode-line-front-space
+                  mode-line-buffer-identification
+                  " "
+                  mode-line-position
+                  (vc-mode vc-mode)
+                  " " mode-line-modes
+                  mode-line-misc-info
+                  mode-line-end-spaces))
+  (moody-replace-mode-line-buffer-identification)
+  (moody-replace-vc-mode))
+
+(use-package minions
+  :after moody
   :custom
-  (doom-modeline-height 25) ;; Set modeline height
-  :hook (elpaca-after-init . doom-modeline-mode))
+  (minions-mode-line-lighter "…")
+  (minions-mode-line-delimiters '("" . ""))
+  :config
+  (minions-mode +1))
 
 (use-package nerd-icons :defer)
 
@@ -447,6 +478,22 @@
 
 (use-package nerd-icons-ibuffer
   :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
+
+(use-package ultra-scroll
+  :ensure (:host github :repo "jdtsmith/ultra-scroll")
+  :custom
+  (scroll-conservatively 3)
+  (scroll-margin 0)
+  :config
+  (ultra-scroll-mode +1))
+
+(use-package nyan-mode
+  :defer 20
+  :if (display-graphic-p)
+  :custom
+  (nyan-bar-length 10)
+  :config
+  (nyan-mode +1))
 
 (use-package projectile
   :hook (elpaca-after-init . projectile-mode)
@@ -463,7 +510,8 @@
   :hook ((c-mode c-ts-mode c++-mode c++-ts-mode
                  lua-mode lua-ts-mode
                  python-mode python-ts-mode
-                 elixir-mode elixir-ts-mode heex-ts-mode)
+                 elixir-mode elixir-ts-mode heex-ts-mode
+                 typescript-ts-mode tsx-ts-mode)
          . eglot-ensure)
   :custom
   ;; Good default
@@ -596,11 +644,10 @@
   :commands toc-org-enable
   :hook (org-mode . toc-org-mode))
 
-(use-package org-superstar
-  :after org
-  :hook (org-mode . org-superstar-mode))
-
 (use-package org-modern
+  :init
+  (setq org-modern-star 'replace)
+  (setq org-modern-replace-stars '("⟶" "⟶" "⟶" "⟶" "⟶" "⟶" "⟶" "⟶"))
   :hook ((org-mode . org-modern-mode)
          (org-agenda-finalize . org-modern-agenda)))
 
