@@ -175,6 +175,11 @@
   (setq evil-collection-mode-list '(dired ibuffer magit corfu consult info bookmark))
   (evil-collection-init))
 
+(use-package evil-commentary
+  :after evil
+  :config
+  (evil-commentary-mode))
+
 (defun start/open-init-file ()
     "Open init.org configuration file"
     (interactive)
@@ -246,7 +251,6 @@
     (start/leader-keys
       "." '(find-file :wk "Find file")
       "," '(embark-act :wk "Embark act")
-      "TAB" '(comment-line :wk "Comment lines")
       "q" '(:ignore t :wk "Quit")
 
       ;; Projectile
@@ -371,6 +375,25 @@
       "t t" '(visual-line-mode :wk "Toggle truncated lines (wrap)")
       "t l" '(display-line-numbers-mode :wk "Toggle line numbers")
       "t p" '(org-tree-slide-mode :wk "Presentation mode"))
+
+    (tab-bar-mode 1)
+
+    (start/leader-keys
+      "TAB"     '(:ignore t :wk "Tabs")
+      "TAB TAB" '(tab-bar-select-tab-by-name    :wk "Switch tab by name")
+      "TAB n"   '(tab-bar-new-tab               :wk "New tab")
+      "TAB d"   '(tab-bar-close-tab             :wk "Close tab")
+      "TAB ["   '(tab-bar-switch-to-prev-tab    :wk "Previous tab")
+      "TAB ]"   '(tab-bar-switch-to-next-tab    :wk "Next tab")
+      "TAB 1"   '((lambda () (interactive) (tab-bar-select-tab 1)) :wk "Tab 1")
+      "TAB 2"   '((lambda () (interactive) (tab-bar-select-tab 2)) :wk "Tab 2")
+      "TAB 3"   '((lambda () (interactive) (tab-bar-select-tab 3)) :wk "Tab 3")
+      "TAB 4"   '((lambda () (interactive) (tab-bar-select-tab 4)) :wk "Tab 4")
+      "TAB 5"   '((lambda () (interactive) (tab-bar-select-tab 5)) :wk "Tab 5")
+      "TAB 6"   '((lambda () (interactive) (tab-bar-select-tab 6)) :wk "Tab 6")
+      "TAB 7"   '((lambda () (interactive) (tab-bar-select-tab 7)) :wk "Tab 7")
+      "TAB 8"   '((lambda () (interactive) (tab-bar-select-tab 8)) :wk "Tab 8")
+      "TAB 9"   '((lambda () (interactive) (tab-bar-select-tab 9)) :wk "Tab 9"))
     )
 
   ;; Fix general.el leader key not working instantly in messages buffer with evil mode
@@ -640,6 +663,10 @@
   :custom
   (org-edit-src-content-indentation 4) ;; Set src block automatic indent to 4 instead of 2.
   (org-return-follows-link t)   ;; Sets RETURN key in org-mode to follow links
+  (org-file-apps '((auto-mode  . emacs)   ;; Open text/code files inside Emacs
+                   (directory  . emacs)   ;; Open directories in dired
+                   ("\\.pdf\\'" . default) ;; PDFs in system viewer
+                   (t          . emacs)))  ;; Everything else in Emacs too
   :hook
   (org-mode . org-indent-mode) ;; Indent text
   )
@@ -1012,6 +1039,13 @@
               ("TAB" . copilot-accept-completion)
               ("C-<tab>" . copilot-accept-completion-by-word)
               ("C-TAB" . copilot-accept-completion-by-word)))
+
+(use-package agent-shell
+    :ensure t
+    :ensure-system-package
+    ;; Add agent installation configs here
+    ((claude . "brew install claude-code")
+     (claude-agent-acp . "npm install -g @zed-industries/claude-agent-acp")))
 
 (use-package consult
   ;; Enable automatic preview at point in the *Completions* buffer. This is
