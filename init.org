@@ -645,8 +645,8 @@ Note: The Leader key is what you will press when you want to access your keybind
 
       (start/leader-keys
         "b" '(:ignore t :wk "Buffers & Dired")
-        "b s" '(consult-buffer :wk "Switch buffer")
-        "b k" '(kill-current-buffer :wk "Kill current buffer")
+        "b b" '(consult-buffer :wk "Switch buffer")
+        "b d" '(kill-current-buffer :wk "Kill current buffer")
         "b i" '(ibuffer :wk "Ibuffer")
         "b n" '(next-buffer :wk "Next buffer")
         "b p" '(previous-buffer :wk "Previous buffer")
@@ -1428,6 +1428,35 @@ Only you see this — talking points, timing cues, etc.
       :custom
       (org-tree-slide-skip-outline-level 2)
       (org-tree-slide-header nil))
+#+end_src
+
+*** Markdown
+[[https://jblevins.org/projects/markdown-mode/][markdown-mode]] provides syntax highlighting and editing support for Markdown files.
+We pair it with a =pandoc=-powered preview that renders directly in an =eww= buffer — no browser needed, similar to =glow= in the terminal.
+
+#+begin_src emacs-lisp
+  (use-package markdown-mode
+    :mode (("\\.md\\'" . markdown-mode)
+           ("\\.markdown\\'" . markdown-mode)
+           ("README\\.md\\'" . gfm-mode))
+    :custom
+    (markdown-command "pandoc")
+    (markdown-fontify-code-blocks-natively t)
+    :config
+    (defun start/markdown-preview-eww ()
+      "Render current markdown buffer via pandoc and open in eww."
+      (interactive)
+      (let* ((tmp (make-temp-file "md-preview" nil ".html")))
+        (call-process-region (point-min) (point-max)
+                             "pandoc" nil `(:file ,tmp) nil
+                             "--from=markdown" "--to=html5"
+                             "--standalone"
+                             "--metadata" "title=Preview")
+        (eww-open-file tmp)
+        (message "Markdown preview rendered.")))
+    (start/leader-keys
+      :keymaps 'markdown-mode-map
+      "m p" '(start/markdown-preview-eww :wk "Markdown preview (eww)")))
 #+end_src
 
 ** Terminal
