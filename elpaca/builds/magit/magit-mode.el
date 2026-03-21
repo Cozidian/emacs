@@ -1,1 +1,0 @@
-/Users/christofferberglund/.config/emacs/elpaca/repos/magit/lisp/magit-mode.el

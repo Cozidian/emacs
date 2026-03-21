@@ -1,1 +1,0 @@
-/Users/christofferberglund/.config/emacs/elpaca/repos/annalist/annalist.el

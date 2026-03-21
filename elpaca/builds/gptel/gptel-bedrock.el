@@ -1,1 +1,0 @@
-/Users/christofferberglund/.config/emacs/elpaca/repos/gptel/gptel-bedrock.el

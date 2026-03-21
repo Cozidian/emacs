@@ -22,15 +22,15 @@
 
 (add-hook 'emacs-startup-hook #'start/display-startup-time)
 
-(defvar elpaca-installer-version 0.11)
+(defvar elpaca-installer-version 0.12)
 (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
-(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+(defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
 (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
                               :ref nil :depth 1 :inherit ignore
                               :files (:defaults "elpaca-test.el" (:exclude "extensions"))
                               :build (:not elpaca--activate-package)))
-(let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+(let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
        (build (expand-file-name "elpaca/" elpaca-builds-directory))
        (order (cdr elpaca-order))
        (default-directory repo))
@@ -185,6 +185,11 @@
     (interactive)
     (find-file "~/.config/emacs/init.org"))
 
+  (defun start/find-org-file ()
+    "Fuzzy find a file in ~/org."
+    (interactive)
+    (consult-fd "~/org"))
+
   (defun start/reload-config()
     "Reload Emacs config"
     (interactive)
@@ -251,6 +256,7 @@
     (start/leader-keys
       "." '(find-file :wk "Find file")
       "," '(embark-act :wk "Embark act")
+      "/" '((lambda () (interactive) (consult-ripgrep (projectile-project-root))) :wk "Search project")
       "q" '(:ignore t :wk "Quit")
 
       ;; Projectile
@@ -300,6 +306,11 @@
       "b r" '(revert-buffer :wk "Reload buffer")
       "b v" '(dired :wk "Open dired")
       "b j" '(dired-jump :wk "Dired jump to current"))
+
+    (start/leader-keys
+      "o" '(:ignore t :wk "Org")
+      "o o" '(start/find-org-file :wk "Find org file")
+      "o d" '((lambda () (interactive) (dired "~/org")) :wk "Org directory"))
 
     (start/leader-keys
       "w" '(:ignore t :wk "Windows")

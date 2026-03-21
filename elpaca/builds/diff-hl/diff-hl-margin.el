@@ -1,1 +1,0 @@
-/Users/christofferberglund/.config/emacs/elpaca/repos/diff-hl/diff-hl-margin.el
