@@ -663,6 +663,7 @@ Note: The Leader key is what you will press when you want to access your keybind
       (start/leader-keys
         "o" '(:ignore t :wk "Org")
         "o o" '(start/find-org-file :wk "Find org file")
+        "o a" '(org-agenda :wk "Org agenda")
         "o d" '((lambda () (interactive) (dired "~/org")) :wk "Org directory"))
 
       (start/leader-keys
@@ -1289,6 +1290,13 @@ Much easier than org-tempo
                        (directory  . emacs)   ;; Open directories in dired
                        ("\\.pdf\\'" . default) ;; PDFs in system viewer
                        (t          . emacs)))  ;; Everything else in Emacs too
+      ;; Agenda — recursively collect all .org files under ~/org
+      (org-agenda-files (directory-files-recursively "~/org" "\\.org$"))
+      (org-agenda-span 'week)
+      (org-agenda-start-on-weekday 1) ;; Monday
+      (org-agenda-window-setup 'current-window) ;; Open agenda in current window, not a split
+      (org-agenda-block-separator nil)
+      (org-agenda-todo-ignore-scheduled 'future)
       :hook
       (org-mode . org-indent-mode) ;; Indent text
       )
@@ -1311,6 +1319,49 @@ Modern Org UI package.
       (setq org-modern-replace-stars '("⟶" "⟶" "⟶" "⟶" "⟶" "⟶" "⟶" "⟶"))
       :hook ((org-mode . org-modern-mode)
              (org-agenda-finalize . org-modern-agenda)))
+#+end_src
+
+**** Org Agenda
+Clean, minimal agenda styling — no visual clutter, gruvbox-aligned colours, generous spacing.
+#+begin_src emacs-lisp
+    (use-package org-agenda
+      :ensure nil
+      :custom
+      ;; Layout
+      (org-agenda-prefix-format
+       '((agenda . "  %-12:c %?-12t ")
+         (todo   . "  %-12:c ")
+         (tags   . "  %-12:c ")
+         (search . "  %-12:c ")))
+      (org-agenda-time-grid
+       '((daily today require-timed)
+         (800 1000 1200 1400 1600 1800 2000)
+         "      " "─────────────────"))
+      (org-agenda-current-time-string "◀── now")
+      ;; Hide noise
+      (org-agenda-show-all-dates nil)         ;; Skip days with nothing
+      (org-agenda-skip-deadline-if-done t)
+      (org-agenda-skip-scheduled-if-done t)
+      (org-agenda-compact-blocks t)
+      ;; Tags right-aligned with a gap
+      (org-agenda-tags-column -80)
+      :config
+      (custom-set-faces
+       ;; Date headers
+       '(org-agenda-date          ((t (:height 1.1 :weight bold :underline nil))))
+       '(org-agenda-date-today    ((t (:height 1.15 :weight bold :underline nil :inverse-video nil
+                                       :foreground "#fabd2f")))) ;; gruvbox yellow
+       '(org-agenda-date-weekend  ((t (:weight normal :foreground "#928374"))))  ;; gruvbox grey
+       ;; Time grid lines — subtle
+       '(org-time-grid            ((t (:foreground "#504945"))))
+       ;; Structure
+       '(org-agenda-structure     ((t (:height 1.05 :weight bold :underline nil))))
+       ;; Done items fade out
+       '(org-agenda-done          ((t (:foreground "#928374" :strike-through t))))
+       ;; Deadline / scheduled
+       '(org-upcoming-deadline    ((t (:foreground "#fb4934"))))   ;; gruvbox red
+       '(org-scheduled-today      ((t (:foreground "#b8bb26"))))   ;; gruvbox green
+       '(org-scheduled-previously ((t (:foreground "#fe8019"))))))  ;; gruvbox orange
 #+end_src
 
 **** Presentations
