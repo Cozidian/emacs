@@ -257,6 +257,7 @@
       "." '(find-file :wk "Find file")
       "," '(embark-act :wk "Embark act")
       "/" '((lambda () (interactive) (consult-ripgrep (projectile-project-root))) :wk "Search project")
+      ":" '(execute-extended-command :wk "M-x")
       "q" '(:ignore t :wk "Quit")
 
       ;; Projectile
@@ -1165,7 +1166,13 @@
   :hook (elpaca-after-init . start/enable-spelling))
 
 (use-package gptel
-  :commands (gptel))
+  :commands (gptel)
+  :config
+  (setq gptel-backend (gptel-make-ollama "Ollama"
+                        :host "localhost:11434"
+                        :stream t
+                        :models '(gpt-oss:20b))
+        gptel-model 'gpt-oss:20b))
 
 (use-package track-changes
   :defer)
@@ -1282,7 +1289,11 @@
   :description "Search  (live minibuffer)"
   (interactive)
   (let ((case-fold-search (not start/search-case-sensitive)))
-    (consult-line)))
+    (if start/search-whole-word
+        (let* ((word (read-string "Search whole word: "))
+               (pattern (format "\\<%s\\>" (regexp-quote word))))
+          (consult-line pattern))
+      (consult-line))))
 
 (transient-define-suffix start/search--do-occur ()
   :description "Occur   (results buffer)"

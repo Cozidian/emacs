@@ -50,6 +50,7 @@
   - [[#using-the-file][Using the file]]
 - [[#version-control][Version Control]]
   - [[#magit][Magit]]
+  - [[#ai-review][AI Review]]
   - [[#diff-hl][Diff-hl]]
 - [[#completion][Completion]]
   - [[#corfu][Corfu]]
@@ -63,6 +64,7 @@
   - [[#agent-shell][agent shell]]
 - [[#other-packages][Other packages]]
   - [[#consult][Consult]]
+  - [[#in-file-search][In-File Search]]
   - [[#helpful][Helpful]]
   - [[#diminish][Diminish]]
   - [[#rainbow-delimiters][Rainbow Delimiters]]
@@ -115,6 +117,7 @@ So don't hesitate to try things out.
 You can delete this when you're done. It's your config now. :)
 I hope you have fun with your Emacs journey.
 MiniApollo
+
 
 ** Ctrl & Meta
 This is from the Emacs tutorial, but I put this here for safety.
@@ -610,6 +613,7 @@ Note: The Leader key is what you will press when you want to access your keybind
         "." '(find-file :wk "Find file")
         "," '(embark-act :wk "Embark act")
         "/" '((lambda () (interactive) (consult-ripgrep (projectile-project-root))) :wk "Search project")
+        ":" '(execute-extended-command :wk "M-x")
         "q" '(:ignore t :wk "Quit")
 
         ;; Projectile
@@ -1914,7 +1918,13 @@ Jinx can cause performance problems in large markdown files.
 General LLM interface for Emacs.
 #+begin_src emacs-lisp
     (use-package gptel
-      :commands (gptel))
+      :commands (gptel)
+      :config
+      (setq gptel-backend (gptel-make-ollama "Ollama"
+                            :host "localhost:11434"
+                            :stream t
+                            :models '(gpt-oss:20b))
+            gptel-model 'gpt-oss:20b))
 #+end_src
 
 ** Copilot
