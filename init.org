@@ -2061,7 +2061,11 @@ Activate with =SPC s s=.
     :description "Search  (live minibuffer)"
     (interactive)
     (let ((case-fold-search (not start/search-case-sensitive)))
-      (consult-line)))
+      (if start/search-whole-word
+          (let* ((word (read-string "Search whole word: "))
+                 (pattern (format "\\<%s\\>" (regexp-quote word))))
+            (consult-line pattern))
+        (consult-line))))
 
   (transient-define-suffix start/search--do-occur ()
     :description "Occur   (results buffer)"
@@ -2072,7 +2076,7 @@ Activate with =SPC s s=.
            (raw (read-string "Occur: " initial))
            (pattern (cond
                      (start/search-use-regexp raw)
-                     (start/search-whole-word (format "\\b%s\\b" (regexp-quote raw)))
+                     (start/search-whole-word (format "\\<%s\\>" (regexp-quote raw)))
                      (t (regexp-quote raw)))))
       (occur pattern)))
 

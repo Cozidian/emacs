@@ -1293,7 +1293,7 @@
          (raw (read-string "Occur: " initial))
          (pattern (cond
                    (start/search-use-regexp raw)
-                   (start/search-whole-word (format "\\b%s\\b" (regexp-quote raw)))
+                   (start/search-whole-word (format "\\<%s\\>" (regexp-quote raw)))
                    (t (regexp-quote raw)))))
     (occur pattern)))
 
