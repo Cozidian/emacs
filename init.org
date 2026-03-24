@@ -642,12 +642,12 @@ Note: The Leader key is what you will press when you want to access your keybind
 
       (start/leader-keys
         "s" '(:ignore t :wk "Search")
-        "s c" '(start/open-init-file :wk "Open init file")
         "s r" '(consult-recent-file :wk "Search recent files")
         "s f" '(consult-fd :wk "Search files with fd")
         "s g" '(consult-ripgrep :wk "Search with ripgrep")
         "s l" '(consult-line :wk "Search line")
-        "s i" '(consult-imenu :wk "Search Imenu buffer locations")) ;; This one is really cool
+        "s i" '(consult-imenu :wk "Search Imenu buffer locations") ;; This one is really cool
+        "s s" '(start/search-in-file :wk "Search in file (transient)"))
 
       (start/leader-keys
         "b" '(:ignore t :wk "Buffers & Dired")
@@ -711,7 +711,12 @@ Note: The Leader key is what you will press when you want to access your keybind
 
       (start/leader-keys
         "g" '(:ignore t :wk "Git")
-        "g s" '(magit-status :wk "Magit status"))
+        "g s" '(magit-status :wk "Magit status")
+        "g b" '(magit-blame  :wk "Magit blame")
+        "g l" '(magit-log-current :wk "Magit log")
+        "g r" '(start/ai-review-staged :wk "AI review staged")
+        "g R" '(start/ai-review-unstaged :wk "AI review unstaged")
+        "g B" '(start/ai-review-branch :wk "AI review branch"))
 
       (start/leader-keys
         "r" '(:ignore t :wk "Reload & Packages") ;; To get more help use C-h commands (describe variable, function, etc.)
@@ -725,11 +730,12 @@ Note: The Leader key is what you will press when you want to access your keybind
         "r u" '(elpaca-update-all :wk "Elpaca update all")
         "r l" '(elpaca-log :wk "Elpaca log")
 
-        "r q" '(save-buffers-kill-emacs :wk "Quit Emacs and Daemon")
         "r r" '(start/reload-config :wk "Reload Emacs config"))
 
   (start/leader-keys
-    "q q" '(save-buffers-kill-emacs :wk "Quit Emacs"))
+    "q" '(:ignore t :wk "Quit")
+    "q q" '(save-buffers-kill-emacs :wk "Quit Emacs")
+    "q r" '(start/reload-config :wk "Reload config"))
 
       (start/leader-keys
         "t" '(:ignore t :wk "Toggle")
@@ -1597,6 +1603,63 @@ Complete text-based user interface to Git.
       :config
       (setopt magit-format-file-function #'magit-format-file-nerd-icons) ;; Magit nerd icons
       )
+
+    (use-package magit-delta
+      :after magit
+      :custom
+      (magit-delta-default-dark-theme "gruvbox-dark")
+      (magit-delta-hide-plus-minus-markers nil)
+      :config
+      (magit-delta-mode))
+#+end_src
+
+** AI Review
+Review git changes with gptel. Grabs the relevant diff and opens an AI review in a dedicated buffer.
+#+begin_src emacs-lisp
+    (defun start/ai-review--show (diff context)
+      "Send DIFF to gptel with CONTEXT label and display the review."
+      (if (string-empty-p (string-trim diff))
+          (message "No changes to review.")
+        (let ((prompt (format "You are a thorough code reviewer. Review the following git diff concisely — highlight bugs, logic issues, security concerns, and meaningful improvements. Skip style nitpicks. Context: %s\n\n```diff\n%s\n```" context diff)))
+          (message "Sending to AI for review...")
+          (gptel-request prompt
+            :callback (lambda (response _info)
+                        (with-current-buffer (get-buffer-create "*AI Review*")
+                          (let ((inhibit-read-only t))
+                            (erase-buffer)
+                            (insert (format "# AI Review — %s\n\n" context))
+                            (insert response)
+                            (goto-char (point-min))
+                            (when (fboundp 'markdown-mode) (markdown-mode)))
+                          (display-buffer (current-buffer)
+                                          '(display-buffer-in-side-window
+                                            (side . right)
+                                            (window-width . 0.4)))))))))
+
+    (defun start/ai-review-staged ()
+      "AI review of staged (index) changes."
+      (interactive)
+      (start/ai-review--show
+       (shell-command-to-string "git diff --cached")
+       "staged changes"))
+
+    (defun start/ai-review-unstaged ()
+      "AI review of all unstaged working tree changes."
+      (interactive)
+      (start/ai-review--show
+       (shell-command-to-string "git diff")
+       "unstaged changes"))
+
+    (defun start/ai-review-branch ()
+      "AI review of all commits on the current branch vs main/master."
+      (interactive)
+      (let* ((base (or (car (seq-filter
+                             (lambda (b) (member b '("main" "master")))
+                             (split-string
+                              (shell-command-to-string "git branch --format='%(refname:short)'") "\n" t)))
+                       "HEAD~1"))
+             (diff (shell-command-to-string (format "git diff %s...HEAD" base))))
+        (start/ai-review--show diff (format "branch vs %s" base))))
 #+end_src
 
 ** Diff-hl
@@ -1943,6 +2006,103 @@ Check out their [[https://github.com/minad/consult][git repository]] for more aw
        ;;;; 5. No project support
       ;; (setq consult-project-function nil)
       )
+#+end_src
+
+** In-File Search
+Magit-style transient popup for in-file search and replace.
+Toggle case sensitivity, regexp mode, and whole-word matching before launching:
+- *Search* — live minibuffer results via =consult-line= (navigate with C-j/C-k, RET to jump)
+- *Occur* — persistent results buffer; navigate with =n=/=p= and =RET= to jump
+- *Replace* — =query-replace= or =query-replace-regexp= honouring the current options
+
+Activate with =SPC s s=.
+#+begin_src emacs-lisp
+  ;; Persistent toggle state for in-file search
+  (defvar start/search-case-sensitive nil
+    "When non-nil, search is case sensitive (overrides case-fold-search).")
+  (defvar start/search-use-regexp nil
+    "When non-nil, use regular expression search/replace.")
+  (defvar start/search-whole-word nil
+    "When non-nil, match whole words only (wraps pattern in \\b…\\b).")
+
+  ;; --- Toggle suffixes (stay in the transient) ---
+  (transient-define-suffix start/search--toggle-case ()
+    :description (lambda ()
+                   (concat "Case sensitive  "
+                           (if start/search-case-sensitive
+                               (propertize "[ON]" 'face 'transient-value)
+                             (propertize "[off]" 'face 'transient-inactive-value))))
+    :transient t
+    (interactive)
+    (setq start/search-case-sensitive (not start/search-case-sensitive)))
+
+  (transient-define-suffix start/search--toggle-regexp ()
+    :description (lambda ()
+                   (concat "Regexp mode     "
+                           (if start/search-use-regexp
+                               (propertize "[ON]" 'face 'transient-value)
+                             (propertize "[off]" 'face 'transient-inactive-value))))
+    :transient t
+    (interactive)
+    (setq start/search-use-regexp (not start/search-use-regexp)))
+
+  (transient-define-suffix start/search--toggle-word ()
+    :description (lambda ()
+                   (concat "Whole word      "
+                           (if start/search-whole-word
+                               (propertize "[ON]" 'face 'transient-value)
+                             (propertize "[off]" 'face 'transient-inactive-value))))
+    :transient t
+    (interactive)
+    (setq start/search-whole-word (not start/search-whole-word)))
+
+  ;; --- Action suffixes (exit transient) ---
+  (transient-define-suffix start/search--do-search ()
+    :description "Search  (live minibuffer)"
+    (interactive)
+    (let ((case-fold-search (not start/search-case-sensitive)))
+      (consult-line)))
+
+  (transient-define-suffix start/search--do-occur ()
+    :description "Occur   (results buffer)"
+    (interactive)
+    (let* ((case-fold-search (not start/search-case-sensitive))
+           (initial (when (use-region-p)
+                      (buffer-substring-no-properties (region-beginning) (region-end))))
+           (raw (read-string "Occur: " initial))
+           (pattern (cond
+                     (start/search-use-regexp raw)
+                     (start/search-whole-word (format "\\b%s\\b" (regexp-quote raw)))
+                     (t (regexp-quote raw)))))
+      (occur pattern)))
+
+  (transient-define-suffix start/search--do-replace ()
+    :description "Replace (query-replace)"
+    (interactive)
+    (let ((case-fold-search (not start/search-case-sensitive)))
+      (if start/search-use-regexp
+          (call-interactively #'query-replace-regexp)
+        (call-interactively #'query-replace))))
+
+  ;; --- The transient prefix ---
+  (transient-define-prefix start/search-in-file ()
+    "In-file search and replace with toggleable options."
+    [:description "Toggle options"
+     ("c" start/search--toggle-case)
+     ("r" start/search--toggle-regexp)
+     ("w" start/search--toggle-word)]
+    [["Actions"
+      ("s" start/search--do-search)
+      ("o" start/search--do-occur)
+      ("%" start/search--do-replace)
+      ("q" "Quit" transient-quit-one)]])
+
+  ;; Nice occur-mode navigation with evil: n/p move between matches
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal occur-mode-map
+      (kbd "n") #'occur-next
+      (kbd "p") #'occur-prev
+      (kbd "RET") #'occur-mode-goto-occurrence))
 #+end_src
 
 ** Helpful

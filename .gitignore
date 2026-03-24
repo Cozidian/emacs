@@ -74,3 +74,4 @@ site-lisp/package/
 
 # OS/editor noise
 .DS_Store
+/.agent-shell/
