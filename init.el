@@ -1192,7 +1192,8 @@
     :ensure-system-package
     ;; Add agent installation configs here
     ((claude . "brew install claude-code")
-     (claude-agent-acp . "npm install -g @zed-industries/claude-agent-acp")))
+     (claude-agent-acp . "npm install -g @zed-industries/claude-agent-acp"))
+    :bind ("C-c a s" . agent-shell-send-screenshot))
 
 (use-package consult
   ;; Enable automatic preview at point in the *Completions* buffer. This is
@@ -1244,6 +1245,8 @@
    ;;;; 5. No project support
   ;; (setq consult-project-function nil)
   )
+
+(require 'transient)
 
 ;; Persistent toggle state for in-file search
 (defvar start/search-case-sensitive nil
@@ -1349,6 +1352,12 @@
 
 (use-package diminish :defer)
 
+(use-package ace-window
+  :ensure t
+  :bind ("M-o" . ace-window)
+  :custom
+  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
@@ -1389,7 +1398,7 @@
 
 (use-package which-key
   :ensure nil ;; Don't install which-key because it's now built-in
-  :hook (elpaca-after-init . which-key-mode)
+  :init (which-key-mode)
   :diminish
   :custom
   (which-key-side-window-location 'bottom)
