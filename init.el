@@ -125,11 +125,11 @@
   (auto-save-default nil) ;; Stop creating # auto save files
   (delete-by-moving-to-trash t)
   ;; macOS + Norwegian/intl keyboard:
-  ;; left Option types symbols like {}[]|, right Option acts as Meta (M-...).
+  ;; Command acts as Meta; left Option types symbols like {}[]|.
+  (ns-command-modifier 'meta)
   (ns-option-modifier nil)
-  (ns-right-option-modifier 'meta)
+  (mac-command-modifier 'meta)
   (mac-option-modifier nil)
-  (mac-right-option-modifier 'meta)
   :hook
   (prog-mode . hs-minor-mode) ;; Enable folding hide/show globally
   ;; (prog-mode . display-fill-column-indicator-mode) ;; Display line length indicator
@@ -1171,8 +1171,8 @@
   (setq gptel-backend (gptel-make-ollama "Ollama"
                         :host "localhost:11434"
                         :stream t
-                        :models '(gpt-oss:20b))
-        gptel-model 'gpt-oss:20b))
+                        :models '(gemma4:e4b))
+        gptel-model 'gemma4:e4b))
 
 (use-package track-changes
   :defer)
